@@ -240,5 +240,5 @@ def simulate_link_failure(G, pos):
     G[u][v]['latency'] = original_latency
     G[u][v]['bandwidth'] = original_bandwidth
 
-if __name__ == "main":
+if __name__ == "__main__":
     main()
