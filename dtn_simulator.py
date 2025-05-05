@@ -5,7 +5,7 @@ import numpy as np
 from collections import defaultdict
 
 def main():
-    st.title("Optical Network Topology Visualizer")
+    st.title("Delay Tolerant Network (DTN) ")
     
     # Sidebar controls
     st.sidebar.header("Network Configuration")
