@@ -260,96 +260,68 @@ def simulate_link_failure(G, pos):
     G[u][v]['bandwidth'] = original_bandwidth
 
 def modulation_visualization(modulation, snr_db):
-    st.header("Modulation Process Visualization")
-
-    if modulation not in ["BPSK", "QPSK", "16-QAM"]:
-        st.warning(f"Signal visualization currently supports only BPSK, QPSK, and 16-QAM modulation.")
-
-    # Generate random bits
-    bits = np.random.randint(0, 2, 100)
-
-    if modulation == "BPSK":
-        # BPSK: 0 → -1, 1 → +1
-        symbols = 2 * bits - 1
-        t = np.linspace(0, 1, len(symbols))
-        modulated = symbols
-        demodulated = (modulated > 0).astype(int)  # Demodulate BPSK
-    elif modulation == "QPSK":
-        bits = bits[:len(bits) // 2 * 2]  # Ensure even number of bits for pairing
-        bit_pairs = bits.reshape(-1, 2)
-        mapping = {
-            (0, 0): 1 + 1j,
-            (0, 1): -1 + 1j,
-            (1, 0): 1 - 1j,
-            (1, 1): -1 - 1j,
-        }
-        symbols = np.array([mapping[tuple(b)] for b in bit_pairs])
-        modulated = symbols
-        t = np.linspace(0, 1, len(symbols))
-        # Demodulate QPSK by checking real and imaginary parts
-        demodulated = np.array([0 if np.real(symbol) > 0 else 1 for symbol in modulated])
-    elif modulation == "16-QAM":
-        bits = bits[:len(bits) // 4 * 4]  # Ensure the number of bits is a multiple of 4
-        symbols = []
-        for i in range(0, len(bits), 4):
-            I = 2 * (2 * bits[i] + bits[i + 1]) - 3  # Mapping for I axis
-            Q = 2 * (2 * bits[i + 2] + bits[i + 3]) - 3  # Mapping for Q axis
-            symbols.append(complex(I, Q))
-        symbols = np.array(symbols)
-        modulated = symbols
-        t = np.linspace(0, 1, len(symbols))
-        # Demodulate 16-QAM by checking the real and imaginary parts
-        demodulated = np.array([0 if np.real(symbol) > 0 else 1 for symbol in modulated])
-    else:
-        st.error("Unknown modulation type")
-        return
-
-    # Add noise based on SNR
-    snr_linear = 10 ** (snr_db / 10)
-    noise_power = 1 / snr_linear
-    noise = np.random.normal(0, np.sqrt(noise_power), modulated.shape)
-    received = modulated + noise
-
-    # Plotting
-    fig, axs = plt.subplots(4, 1, figsize=(10, 8))
-
-    # Plot Input Bitstream
-    axs[0].step(range(len(bits)), bits, where='post')
-    axs[0].set_title("Input Bitstream")
-    axs[0].set_ylabel("Bits")
-    
-    # Plot Modulated Signal
-    if modulation == "BPSK":
-        axs[1].plot(t, modulated)
-    else:
-        axs[1].plot(t, np.real(modulated), label="Real Part")
-        axs[1].plot(t, np.imag(modulated), label="Imaginary Part")
-        axs[1].legend()
-    axs[1].set_title(f"{modulation} Modulated Signal")
-    axs[1].set_ylabel("Amplitude")
-
-    # Plot Received Signal (with noise)
-    if modulation == "BPSK":
-        axs[2].plot(t, received)
-    else:
-        axs[2].plot(t, np.real(received), label="Real Part")
-        axs[2].plot(t, np.imag(received), label="Imaginary Part")
-        axs[2].legend()
-    axs[2].set_title("Received Signal (with noise)")
-    axs[2].set_ylabel("Amplitude")
-
-    # Demodulated Bitstream (idealized)
-    axs[3].step(range(len(demodulated)), demodulated, where='post')
-    axs[3].set_title("Demodulated Bitstream (idealized)")
-    axs[3].set_xlabel("Time")
-    axs[3].set_ylabel("Bits")
-
-    # Add grid and tighten layout
-    for ax in axs:
-        ax.grid(True)
-    plt.tight_layout()
-    st.pyplot(fig)
-
+     import scipy.signal as signal
+ 
+     st.header("Modulation Process Visualization")
+ 
+     # Generate random bits
+     bits = np.random.randint(0, 2, 100)
+ 
+     if modulation == "BPSK":
+         symbols = 2 * bits - 1  # 0 → -1, 1 → +1
+         t = np.linspace(0, 1, 100)
+         modulated = symbols
+     elif modulation == "QPSK":
+         bits = bits[:len(bits)//2 * 2]
+         bit_pairs = bits.reshape(-1, 2)
+         mapping = {
+             (0, 0): 1 + 1j,
+             (0, 1): -1 + 1j,
+             (1, 0): 1 - 1j,
+             (1, 1): -1 - 1j,
+         }
+         symbols = np.array([mapping[tuple(b)] for b in bit_pairs])
+         modulated = np.real(symbols)
+         t = np.linspace(0, 1, len(modulated))
+     elif modulation == "16-QAM":
+         bits = bits[:len(bits)//4 * 4]
+         symbols = []
+         for i in range(0, len(bits), 4):
+             I = 2*(2*bits[i]+bits[i+1]) - 3
+             Q = 2*(2*bits[i+2]+bits[i+3]) - 3
+             symbols.append(complex(I, Q))
+         symbols = np.array(symbols)
+         modulated = np.real(symbols)
+         t = np.linspace(0, 1, len(modulated))
+     else:
+         st.error("Unknown modulation type")
+         return
+ 
+     # Add noise
+     noise = np.random.normal(0, 1 / (10 ** (snr_db / 20)), modulated.shape)
+     received = modulated + noise
+ 
+     # Plotting
+     fig, axs = plt.subplots(4, 1, figsize=(10, 8))
+     axs[0].plot(bits, drawstyle='steps-post')
+     axs[0].set_title("Input Bitstream")
+ 
+     axs[1].plot(t, modulated)
+     axs[1].set_title(f"{modulation} Modulated Signal")
+ 
+     axs[2].plot(t, received)
+     axs[2].set_title("Received Signal (with noise)")
+ 
+     axs[3].plot(bits, drawstyle='steps-post')
+     axs[3].set_title("Demodulated Bitstream (idealized)")
+ 
+     for ax in axs:
+         ax.grid(True)
+ 
+     plt.tight_layout()
+     st.pyplot(fig)
+ 
+ 
 
 if __name__ == "__main__":
     main()
