@@ -85,6 +85,7 @@ def main():
     st.header("Traffic Simulation")
     if st.button("Run Traffic Simulation"):
         simulate_traffic(G, traffic_intensity, modulation, snr_db)
+        modulation_visualization(modulation, snr_db)
     
     if protection_switch:
         st.header("Protection Switching Simulation")
@@ -256,6 +257,69 @@ def simulate_link_failure(G, pos):
     
     G[u][v]['latency'] = original_latency
     G[u][v]['bandwidth'] = original_bandwidth
+
+def modulation_visualization(modulation, snr_db):
+    import scipy.signal as signal
+
+    st.header("Modulation Process Visualization")
+
+    # Generate random bits
+    bits = np.random.randint(0, 2, 100)
+
+    if modulation == "BPSK":
+        symbols = 2 * bits - 1  # 0 → -1, 1 → +1
+        t = np.linspace(0, 1, 100)
+        modulated = symbols
+    elif modulation == "QPSK":
+        bits = bits[:len(bits)//2 * 2]
+        bit_pairs = bits.reshape(-1, 2)
+        mapping = {
+            (0, 0): 1 + 1j,
+            (0, 1): -1 + 1j,
+            (1, 0): 1 - 1j,
+            (1, 1): -1 - 1j,
+        }
+        symbols = np.array([mapping[tuple(b)] for b in bit_pairs])
+        modulated = np.real(symbols)
+        t = np.linspace(0, 1, len(modulated))
+    elif modulation == "16-QAM":
+        bits = bits[:len(bits)//4 * 4]
+        symbols = []
+        for i in range(0, len(bits), 4):
+            I = 2*(2*bits[i]+bits[i+1]) - 3
+            Q = 2*(2*bits[i+2]+bits[i+3]) - 3
+            symbols.append(complex(I, Q))
+        symbols = np.array(symbols)
+        modulated = np.real(symbols)
+        t = np.linspace(0, 1, len(modulated))
+    else:
+        st.error("Unknown modulation type")
+        return
+
+    # Add noise
+    noise = np.random.normal(0, 1 / (10 ** (snr_db / 20)), modulated.shape)
+    received = modulated + noise
+
+    # Plotting
+    fig, axs = plt.subplots(4, 1, figsize=(10, 8))
+    axs[0].plot(bits, drawstyle='steps-post')
+    axs[0].set_title("Input Bitstream")
+
+    axs[1].plot(t, modulated)
+    axs[1].set_title(f"{modulation} Modulated Signal")
+
+    axs[2].plot(t, received)
+    axs[2].set_title("Received Signal (with noise)")
+
+    axs[3].plot(bits, drawstyle='steps-post')
+    axs[3].set_title("Demodulated Bitstream (idealized)")
+
+    for ax in axs:
+        ax.grid(True)
+
+    plt.tight_layout()
+    st.pyplot(fig)
+
 
 if __name__ == "__main__":
     main()
