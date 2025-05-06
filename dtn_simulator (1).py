@@ -50,7 +50,7 @@ def main():
 
     if pre_emphasis:
         snr_db += 3
-
+    modulation = modulation.strip().upper()
     ber = calculate_ber(modulation, snr_db)
     
     # Create topology
@@ -85,6 +85,7 @@ def main():
     st.header("Traffic Simulation")
     if st.button("Run Traffic Simulation"):
         simulate_traffic(G, traffic_intensity, modulation, snr_db)
+        modulation = modulation.strip().upper()
         modulation_visualization(modulation, snr_db)
     
     if protection_switch:
