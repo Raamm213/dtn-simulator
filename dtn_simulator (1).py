@@ -261,6 +261,9 @@ def simulate_link_failure(G, pos):
 def modulation_visualization(modulation, snr_db):
     st.header("Modulation Process Visualization")
 
+    if modulation not in ["BPSK", "QPSK", "16-QAM"]:
+        st.warning(f"Signal visualization currently supports only BPSK, QPSK, and 16-QAM modulation.")
+
     # Generate random bits
     bits = np.random.randint(0, 2, 100)
 
