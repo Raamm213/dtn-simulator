@@ -269,6 +269,7 @@ def modulation_visualization(modulation, snr_db):
         symbols = 2 * bits - 1
         t = np.linspace(0, 1, len(symbols))
         modulated = symbols
+        demodulated = (modulated > 0).astype(int)  # Demodulate BPSK
     elif modulation == "QPSK":
         bits = bits[:len(bits) // 2 * 2]  # Ensure even number of bits for pairing
         bit_pairs = bits.reshape(-1, 2)
@@ -281,6 +282,8 @@ def modulation_visualization(modulation, snr_db):
         symbols = np.array([mapping[tuple(b)] for b in bit_pairs])
         modulated = symbols
         t = np.linspace(0, 1, len(symbols))
+        # Demodulate QPSK by checking real and imaginary parts
+        demodulated = np.array([0 if np.real(symbol) > 0 else 1 for symbol in modulated])
     elif modulation == "16-QAM":
         bits = bits[:len(bits) // 4 * 4]  # Ensure the number of bits is a multiple of 4
         symbols = []
@@ -291,6 +294,8 @@ def modulation_visualization(modulation, snr_db):
         symbols = np.array(symbols)
         modulated = symbols
         t = np.linspace(0, 1, len(symbols))
+        # Demodulate 16-QAM by checking the real and imaginary parts
+        demodulated = np.array([0 if np.real(symbol) > 0 else 1 for symbol in modulated])
     else:
         st.error("Unknown modulation type")
         return
@@ -330,16 +335,7 @@ def modulation_visualization(modulation, snr_db):
     axs[2].set_ylabel("Amplitude")
 
     # Demodulated Bitstream (idealized)
-    if modulation == "BPSK":
-        demodulated = (received > 0).astype(int)
-    elif modulation == "QPSK":
-        demodulated = np.array([0 if np.real(symbol) > 0 else 1 for symbol in received])
-    elif modulation == "16-QAM":
-        demodulated = np.array([0 if np.real(symbol) > 0 else 1 for symbol in received])
-    else:
-        demodulated = np.zeros_like(bits)
-
-    axs[3].step(range(len(bits)), demodulated, where='post')
+    axs[3].step(range(len(demodulated)), demodulated, where='post')
     axs[3].set_title("Demodulated Bitstream (idealized)")
     axs[3].set_xlabel("Time")
     axs[3].set_ylabel("Bits")
