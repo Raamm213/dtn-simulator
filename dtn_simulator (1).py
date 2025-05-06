@@ -2,6 +2,7 @@ import streamlit as st
 import networkx as nx
 import matplotlib.pyplot as plt
 import numpy as np
+import scipy.signal
 from collections import defaultdict
 
 def main():
@@ -134,6 +135,42 @@ def calculate_ber(modulation, snr_db):
         return (3/8) * np.exp(-snr / 10)
     return 0
 
+def visualize_signal_waveforms(modulation, snr_db):
+    st.subheader("Signal Waveform Visualization")
+    
+    # Generate a random bitstream
+    num_bits = 100
+    bits = np.random.randint(0, 2, num_bits)
+    
+    t = np.linspace(0, 1, num_bits*10)
+    
+    if modulation == "BPSK":
+        signal = 2*bits - 1  # BPSK: 0->-1, 1->+1
+        signal_upsampled = np.repeat(signal, 10)
+        
+        # Add noise
+        snr_linear = 10 ** (snr_db / 10)
+        noise_power = 1 / snr_linear
+        noise = np.random.normal(0, np.sqrt(noise_power), len(signal_upsampled))
+        received = signal_upsampled + noise
+
+        # Plot both waveforms
+        fig, ax = plt.subplots(2, 1, figsize=(10, 4), sharex=True)
+        ax[0].plot(t, signal_upsampled, color='blue')
+        ax[0].set_title("Transmitted BPSK Signal")
+        ax[0].set_ylabel("Amplitude")
+
+        ax[1].plot(t, received, color='red')
+        ax[1].set_title("Received Signal with Noise")
+        ax[1].set_xlabel("Time")
+        ax[1].set_ylabel("Amplitude")
+        
+        plt.tight_layout()
+        st.pyplot(fig)
+    else:
+        st.info("Signal visualization currently supports only BPSK modulation.")
+
+
 def simulate_traffic(G, intensity, modulation, snr_db):
     nodes = list(G.nodes())
     src = np.random.choice(nodes)
@@ -165,6 +202,7 @@ def simulate_traffic(G, intensity, modulation, snr_db):
         
     except nx.NetworkXNoPath:
         st.error(f"No path exists between {src} and {dst}")
+    visualize_signal_waveforms(modulation, snr_db)
 
 def simulate_link_failure(G, pos):
     if len(G.edges()) == 0:
