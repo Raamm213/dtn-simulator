@@ -19,7 +19,7 @@ def main():
     num_nodes = st.sidebar.slider(
         "Number of Nodes",
         min_value=3,
-        max_value=15,
+        max_value=20,
         value=5,
         step=1
     )
